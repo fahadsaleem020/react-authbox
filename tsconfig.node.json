@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "composite": true,
+    "module": "Node16",
+    "skipLibCheck": true,
+    "moduleResolution": "Node16",
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["vite.config.ts"]
+}
