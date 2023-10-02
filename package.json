@@ -7,7 +7,9 @@
   "keywords": [
     "authentication",
     "passport-local",
-    "react auth kit"
+    "react authentication kit",
+    "reactauthkit",
+    "authkit"
   ],
   "license": "MIT",
   "scripts": {
