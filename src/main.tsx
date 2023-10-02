@@ -1,9 +1,12 @@
 import ReactDOM from "react-dom/client";
-import App from "./App.tsx";
+import { Provider } from "@components/userprovider";
+import App from "./App";
 import React from "react";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <App />
+    <Provider fetchUserUrl="http://localhost:3000/api/user">
+      <App />
+    </Provider>
   </React.StrictMode>
 );

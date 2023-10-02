@@ -26,16 +26,18 @@ const UserContext = createContext<ContextData>({
 
 export const useUser = () => useContext(UserContext);
 
-const Provider: FC<
+export const Provider: FC<
   PropsWithChildren & {
     /**
      * @type string
+     *
      * @description url to fetch the user information from
      */
     fetchUserUrl: string;
     /**
      * @type boolean
-     * @description continiously refetch from fetchUserUrl if it fails to get user info
+     * @default false
+     * @description continiously refetch from fetchUserUrl if it fails to get user info, should be used for development purpose.
      */
     refetchOnServerError?: boolean;
     /**
@@ -44,9 +46,9 @@ const Provider: FC<
      * @returns void
      * @description contains error info if the fetchUserUrl fails to get user info
      */
-    fetchError?: (error: AxiosError) => void;
+    onError?: (error: AxiosError) => void;
   }
-> = ({ children, fetchUserUrl, refetchOnServerError = false, fetchError }) => {
+> = ({ children, fetchUserUrl, refetchOnServerError = false, onError }) => {
   const [user, setUser] = useState<ContextData["user"]>();
   const [isloading, setIsloading] = useState(true);
 
@@ -62,7 +64,7 @@ const Provider: FC<
     } catch (error) {
       setIsloading(false);
       const { code } = error as AxiosError;
-      fetchError?.(error as AxiosError);
+      onError?.(error as AxiosError);
       if (code === "ERR_NETWORK" && refetchOnServerError) fetchUser();
     }
   };
@@ -186,5 +188,3 @@ const signout = async ({
     setError?.(error as AxiosError);
   }
 };
-
-export default Provider;

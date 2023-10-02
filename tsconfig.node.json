@@ -2,9 +2,9 @@
   "compilerOptions": {
     "strict": true,
     "composite": true,
-    "module": "Node16",
+    "module": "ES2015",
     "skipLibCheck": true,
-    "moduleResolution": "Node16",
+    "moduleResolution": "Node",
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true
   },
