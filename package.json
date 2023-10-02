@@ -51,6 +51,11 @@
   "publishConfig": {
     "access": "public"
   },
+  "release": {
+    "branches": [
+      "main"
+    ]
+  },
   "module": "lib/index.esm.js",
   "types": "lib/index.d.ts",
   "files": [
