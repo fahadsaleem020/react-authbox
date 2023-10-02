@@ -1,5 +1,5 @@
 {
-  "name": "authbox",
+  "name": "react-authbox",
   "private": false,
   "version": "0.0.0-development",
   "type": "module",
@@ -8,7 +8,7 @@
     "authentication",
     "passport-local",
     "react authentication kit",
-    "authbox"
+    "react-authbox"
   ],
   "license": "MIT",
   "scripts": {
