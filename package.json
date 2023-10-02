@@ -1,6 +1,6 @@
 {
   "name": "reactauthkit",
-  "private": true,
+  "private": false,
   "version": "0.0.0-development",
   "type": "module",
   "author": "fahadsaleem020",
