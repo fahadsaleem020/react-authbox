@@ -47,7 +47,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/fahadsaleem020/react-auth-kit.git"
+    "url": "https://github.com/fahadsaleem020/react-authbox.git"
   },
   "publishConfig": {
     "access": "public"
