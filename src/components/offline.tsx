@@ -18,5 +18,3 @@ export const Offline: FC<OfflineProps> = ({
     return typeof online === "function" ? online(user) : online;
   else return <>{children}</>;
 };
-
-() => <Offline online={(user) => ""}>yes</Offline>;
