@@ -1,12 +1,12 @@
 import { useUser } from "@components/userprovider";
 import React, { FC, PropsWithChildren } from "react";
 
-interface ProtectedProps {
+interface TestProps {
   fallback?: React.ReactNode;
   redirect: React.ReactNode | (() => React.ReactNode);
 }
 
-export const Protected: FC<ProtectedProps & PropsWithChildren> = ({
+export const Test: FC<TestProps & PropsWithChildren> = ({
   fallback,
   children,
   redirect,

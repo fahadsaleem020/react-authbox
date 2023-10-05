@@ -18,10 +18,10 @@ type ContextData = {
 };
 
 const UserContext = createContext<ContextData>({
-  isloading: true,
+  fetchUser: () => Promise.resolve(),
   setUser: () => null,
   user: undefined,
-  fetchUser: () => Promise.resolve(),
+  isloading: true,
 });
 
 export const useUser = () => useContext(UserContext);
@@ -37,7 +37,7 @@ export const Provider: FC<
     /**
      * @type boolean
      * @default false
-     * @description continiously refetch from fetchUserUrl if it fails to get user info, should be used for development purpose.
+     * @description contineously refetch from fetchUserUrl if it fails to get user info, should be used for development purpose.
      */
     refetchOnServerError?: boolean;
     /**
@@ -57,6 +57,7 @@ export const Provider: FC<
       const { status, data } = await axios(fetchUserUrl, {
         withCredentials: true,
       });
+
       if (status === 200) {
         setUser(data);
       }

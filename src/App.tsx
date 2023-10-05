@@ -1,5 +1,5 @@
-import { Offline } from "@components/offline";
-import { Online } from "@components/online";
+import { Offline } from "@/components/offline";
+import { Protected } from "@/components/online";
 import { useAuthentication } from "./components/userprovider";
 
 function App() {
@@ -23,7 +23,7 @@ function App() {
           </button>
         </form>
       </Offline>
-      <Online>
+      <Protected>
         online{" "}
         <button
           type="button"
@@ -31,7 +31,7 @@ function App() {
         >
           logout
         </button>
-      </Online>
+      </Protected>
     </>
   );
 }
