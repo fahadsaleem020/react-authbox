@@ -37,7 +37,7 @@ export const Provider: FC<
     /**
      * @type boolean
      * @default false
-     * @description contineously refetch from fetchUserUrl if it fails to get user info, should be used for development purpose.
+     * @description continuously refetch from fetchUserUrl if it fails to get user info, should be used for development purpose.
      */
     refetchOnServerError?: boolean;
     /**
