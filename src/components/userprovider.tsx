@@ -10,12 +10,39 @@ import React, {
   FC,
 } from "react";
 
-type ContextData = {
-  user?: any;
+interface ContextData {
+  user: unknown;
+  baseUrl?: string;
   isloading: boolean;
   fetchUser: () => Promise<void>;
-  setUser: React.Dispatch<React.SetStateAction<ContextData["user"]>>;
-};
+  setUser: React.Dispatch<React.SetStateAction<unknown>>;
+}
+
+interface ProviderProps extends PropsWithChildren {
+  /**
+   * @type string
+   * @description url to fetch the user information from
+   */
+  fetchUserFrom: string;
+  /**
+   * @type boolean
+   * @default false
+   * @description continuously refetch from fetchUserFrom if it fails to get user info, should be used for development purpose.
+   */
+  refetchOnServerError?: boolean;
+  /**
+   * @type function
+   * @param error AxioxError
+   * @returns void
+   * @description contains error info if the fetchUserFrom fails to get user info
+   */
+  onError?: (error: AxiosError) => void;
+  /**
+   * @type string
+   * @description set the base url to be used in sign, signout and log functions.
+   */
+  baseUrl?: string;
+}
 
 const UserContext = createContext<ContextData>({
   fetchUser: () => Promise.resolve(),
@@ -25,47 +52,30 @@ const UserContext = createContext<ContextData>({
 });
 
 export const useUser = () => useContext(UserContext);
-
-export const Provider: FC<
-  PropsWithChildren & {
-    /**
-     * @type string
-     *
-     * @description url to fetch the user information from
-     */
-    fetchUserUrl: string;
-    /**
-     * @type boolean
-     * @default false
-     * @description continuously refetch from fetchUserUrl if it fails to get user info, should be used for development purpose.
-     */
-    refetchOnServerError?: boolean;
-    /**
-     * @type callback
-     * @param error AxioxError
-     * @returns void
-     * @description contains error info if the fetchUserUrl fails to get user info
-     */
-    onError?: (error: AxiosError) => void;
-  }
-> = ({ children, fetchUserUrl, refetchOnServerError = false, onError }) => {
+export const Provider: FC<ProviderProps> = ({
+  baseUrl,
+  onError,
+  children,
+  fetchUserFrom,
+  refetchOnServerError = false,
+}) => {
   const [user, setUser] = useState<ContextData["user"]>();
   const [isloading, setIsloading] = useState(true);
 
   const fetchUser = async () => {
     try {
-      const { status, data } = await axios(fetchUserUrl, {
+      baseUrl = baseUrl ? baseUrl.trim() + fetchUserFrom.trim() : fetchUserFrom;
+      const { status, data } = await axios(baseUrl, {
         withCredentials: true,
       });
-
       if (status === 200) {
         setUser(data);
       }
       setIsloading(false);
     } catch (error) {
       setIsloading(false);
-      const { code } = error as AxiosError;
       onError?.(error as AxiosError);
+      const { code } = error as AxiosError;
       if (code === "ERR_NETWORK" && refetchOnServerError) fetchUser();
     }
   };
@@ -79,7 +89,9 @@ export const Provider: FC<
   }, []);
 
   return (
-    <UserContext.Provider value={{ user, setUser, isloading, fetchUser }}>
+    <UserContext.Provider
+      value={{ user, setUser, isloading, fetchUser, baseUrl }}
+    >
       {children}
     </UserContext.Provider>
   );
@@ -87,42 +99,45 @@ export const Provider: FC<
 
 export const useAuthentication = () => {
   const [submissionState, setSubmissionState] = useState(false);
+  const { setUser, fetchUser, baseUrl } = useUser();
   const [error, setError] = useState<AxiosError>();
-  const { setUser, fetchUser } = useUser();
 
   return {
     signin: (p: ISignin) =>
-      signin({ ...p, setSubmissionState, fetchUser, setError }),
+      signin({ ...p, setSubmissionState, fetchUser, setError, baseUrl }),
     signout: (p: ISignout) =>
-      signout({ ...p, setSubmissionState, setUser, setError }),
+      signout({ ...p, setSubmissionState, setUser, setError, baseUrl }),
     /**
      * @description handle with try catch
      * @returns axios response
      */
-    log: <T,>(p: ILog) => log<T>({ ...p, setSubmissionState, setError }),
+    log: <T,>(p: ILog) =>
+      log<T>({ ...p, setSubmissionState, setError, baseUrl }),
     submissionState,
     setSubmissionState,
     error,
   };
 };
 
-interface ISignin extends Partial<Pick<ContextData, "fetchUser">> {
-  credentials: any;
-  url: string;
-  setSubmissionState?: Dispatch<SetStateAction<boolean>>;
+interface ISignin extends Partial<Pick<ContextData, "fetchUser" | "baseUrl">> {
   setError?: Dispatch<SetStateAction<AxiosError | undefined>>;
+  setSubmissionState?: Dispatch<SetStateAction<boolean>>;
+  credentials: { email: string; password: string };
+  url: string;
 }
 
 const signin = async ({
-  credentials,
   setSubmissionState,
-  url,
+  credentials,
   fetchUser,
   setError,
+  baseUrl,
+  url,
 }: ISignin) => {
   try {
     setSubmissionState?.(true);
-    const { status } = await axios(url, {
+    baseUrl = baseUrl ? baseUrl.trim() + url.trim() : url;
+    const { status } = await axios(baseUrl, {
       method: "POST",
       withCredentials: true,
       data: credentials,
@@ -139,17 +154,26 @@ const signin = async ({
 };
 
 type ILog = Omit<ISignin, "setUser" | "credentials"> &
-  Omit<AxiosRequestConfig, "url">;
+  Omit<
+    {
+      [P in keyof AxiosRequestConfig as `${P extends "data"
+        ? "body"
+        : P}`]: AxiosRequestConfig[P];
+    },
+    "url"
+  >;
 
-const log = async <Data = any,>({
+const log = async <Data,>({
   setSubmissionState,
   setError,
+  baseUrl,
   url,
   ...config
 }: ILog): Promise<AxiosResponse<Data> | void> => {
   try {
+    baseUrl = baseUrl ? baseUrl.trim() + url.trim() : url;
     setSubmissionState?.(true);
-    const res = await axios(url, {
+    const res = await axios(baseUrl, {
       ...config,
     });
     if (res.status === 200) {
@@ -162,21 +186,23 @@ const log = async <Data = any,>({
   }
 };
 
-interface ISignout extends Partial<Pick<ContextData, "setUser">> {
+interface ISignout extends Partial<Pick<ContextData, "setUser" | "baseUrl">> {
   url: string;
   setSubmissionState?: Dispatch<SetStateAction<boolean>>;
   setError?: Dispatch<SetStateAction<AxiosError | undefined>>;
 }
 
 const signout = async ({
-  url,
   setSubmissionState,
-  setUser,
   setError,
+  setUser,
+  baseUrl,
+  url,
 }: ISignout) => {
   try {
+    baseUrl = baseUrl ? baseUrl.trim() + url.trim() : url;
     setSubmissionState?.(true);
-    const { status } = await axios(url, {
+    const { status } = await axios(baseUrl, {
       method: "DELETE",
       withCredentials: true,
     });

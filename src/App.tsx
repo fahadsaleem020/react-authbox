@@ -1,5 +1,5 @@
 import { Offline } from "@/components/offline";
-import { Protected } from "@/components/online";
+import { Online } from "@/components/online";
 import { useAuthentication } from "./components/userprovider";
 
 function App() {
@@ -8,8 +8,8 @@ function App() {
     e.preventDefault();
     const credentials = Object.fromEntries(new FormData(e.currentTarget));
     await signin({
-      credentials,
-      url: "http://localhost:3000/api/login",
+      credentials: credentials as { email: string; password: string },
+      url: "login",
     });
   };
   return (
@@ -23,15 +23,12 @@ function App() {
           </button>
         </form>
       </Offline>
-      <Protected>
-        online{" "}
-        <button
-          type="button"
-          onClick={() => signout({ url: "http://localhost:3000/api/logout" })}
-        >
+      <Online>
+        online
+        <button type="button" onClick={() => signout({ url: "logout" })}>
           logout
         </button>
-      </Protected>
+      </Online>
     </>
   );
 }

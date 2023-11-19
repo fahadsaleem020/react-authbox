@@ -3,7 +3,7 @@ import { FC, PropsWithChildren } from "react";
 
 interface OfflineProps extends PropsWithChildren {
   fallback?: React.ReactNode;
-  online?: React.ReactNode | ((user: any) => React.ReactNode);
+  online?: React.ReactNode | ((user: unknown) => React.ReactNode);
 }
 
 export const Offline: FC<OfflineProps> = ({

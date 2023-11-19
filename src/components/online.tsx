@@ -4,7 +4,7 @@ import { FC } from "react";
 interface OnlineProps {
   fallback?: React.ReactNode;
   offline?: React.ReactNode | (() => React.ReactNode);
-  children: ((user: any) => React.ReactNode) | React.ReactNode;
+  children: ((user: unknown) => React.ReactNode) | React.ReactNode;
 }
 
 export const Online: FC<OnlineProps> = ({
