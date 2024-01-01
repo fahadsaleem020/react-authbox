@@ -1,17 +1,20 @@
+import { useAuthentication } from "./components/userprovider";
 import { Offline } from "@/components/offline";
 import { Online } from "@/components/online";
-import { useAuthentication } from "./components/userprovider";
 
 function App() {
   const { signin, submissionState, signout } = useAuthentication();
   const handler = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const credentials = Object.fromEntries(new FormData(e.currentTarget));
+
     await signin({
-      credentials: credentials as { email: string; password: string },
-      url: "login",
+      credentials: credentials,
+      url: "/signin",
+      baseUrl: "bogaboga",
     });
   };
+
   return (
     <>
       <Offline>
@@ -25,7 +28,7 @@ function App() {
       </Offline>
       <Online>
         online
-        <button type="button" onClick={() => signout({ url: "logout" })}>
+        <button type="button" onClick={() => signout({ url: "/logout" })}>
           logout
         </button>
       </Online>
