@@ -1,6 +1,6 @@
 export {
   useUser,
-  UserProvider as Provider,
+  UserProvider,
   useAuthentication,
 } from "./src/components/userprovider";
 export { Online } from "./src/components/online";
