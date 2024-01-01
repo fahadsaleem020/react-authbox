@@ -6,7 +6,7 @@ import App from "./App";
 // force
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <Provider fetchUserFrom="user" baseUrl="http://localhost:3000/api/">
+    <Provider fetchUserFrom="user" baseUrl="http://localhost:3000/api" >
       <App />
     </Provider>
   </React.StrictMode>

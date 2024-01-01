@@ -41,7 +41,7 @@ interface ProviderProps extends PropsWithChildren {
    * @type string
    * @description set the base url to be used in sign, signout and log functions.
    */
-  baseUrl?: string;
+  baseUrl: string;
 }
 
 const UserContext = createContext<ContextData>({
@@ -64,10 +64,12 @@ export const Provider: FC<ProviderProps> = ({
 
   const fetchUser = async () => {
     try {
-      baseUrl = baseUrl ? baseUrl.trim() + fetchUserFrom.trim() : fetchUserFrom;
-      const { status, data } = await axios(baseUrl, {
+      let url = baseUrl?.trim() + "/" + fetchUserFrom.trim();
+
+      const { status, data } = await axios(url, {
         withCredentials: true,
       });
+
       if (status === 200) {
         setUser(data);
       }
