@@ -254,7 +254,6 @@ const signout: SignoutFn = async ({
 interface VerifyEmailPropsSignatureOne
   extends Partial<Pick<ContextData, "fetchUser" | "baseUrl">>,
     BaseProps<{ code: string }> {
-  successRedirect?: never;
   authenticate: boolean;
   method: "PUT";
 }
@@ -262,7 +261,6 @@ interface VerifyEmailPropsSignatureOne
 interface VerifyEmailPropsSignatureSecond
   extends Partial<Pick<ContextData, "fetchUser" | "baseUrl">>,
     BaseProps<{ code: string }> {
-  successRedirect: string;
   authenticate?: never;
   method: "GET";
 }
@@ -273,7 +271,6 @@ type VerifyEmailFn = (
 
 const verifyemail: VerifyEmailFn = async ({
   setSubmissionState,
-  successRedirect,
   authenticate,
   credentials,
   fetchUser,
@@ -287,7 +284,7 @@ const verifyemail: VerifyEmailFn = async ({
   if (method === "PUT") {
     urlWithParam = baseUrl! + url;
   } else {
-    urlWithParam = baseUrl! + url + `/${credentials.code}/${successRedirect}`;
+    urlWithParam = baseUrl! + url + `/${credentials.code}`;
   }
 
   try {
