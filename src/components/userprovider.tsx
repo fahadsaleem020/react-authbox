@@ -65,7 +65,6 @@ export const UserProvider: FC<UserProviderProps> = ({
   const [isloading, setIsloading] = useState(true);
 
   const fetchUser = async () => {
-    console.log(url);
     try {
       const { status, data } = await axios(url, {
         withCredentials: true,
