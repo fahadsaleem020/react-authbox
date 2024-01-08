@@ -20,7 +20,7 @@
     "commit": "cz"
   },
   "peerDependencies": {
-    "axios": "^1.5.1",
+    "axios": "^1.6.5",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
