@@ -256,7 +256,9 @@ interface VerifyEmailProps
   method: "PUT" | "GET";
 }
 
-type VerifyEmailFn = (props: VerifyEmailProps) => void;
+type VerifyEmailFn = (
+  props: VerifyEmailProps
+) => Promise<AxiosResponse<any, any>["data"] | undefined>;
 
 const verifyemail: VerifyEmailFn = async ({
   setSubmissionState,
@@ -278,18 +280,19 @@ const verifyemail: VerifyEmailFn = async ({
 
   try {
     setSubmissionState?.(true);
-    const { status } = await axios(urlWithParam, {
+    const res = await axios(urlWithParam, {
       data: { ...credentials, authenticate },
       withCredentials: true,
       method: method,
     });
 
-    if (status === 200) {
+    if (res.status === 200) {
       setSubmissionState?.(false);
       setError?.(undefined);
-      if (authenticate) {
-        await fetchUser?.();
-      }
+
+      if (authenticate) await fetchUser?.();
+
+      return res.data;
     }
   } catch (error) {
     setSubmissionState?.(false);
