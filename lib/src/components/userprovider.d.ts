@@ -35,30 +35,35 @@ interface UserProviderProps extends PropsWithChildren {
 export declare const useUser: () => ContextData;
 export declare const UserProvider: FC<UserProviderProps>;
 export declare const useAuthentication: () => {
-    signin: <Credentials>(p: SigninProps<Credentials>) => void;
-    signout: (p: SignoutProps) => Promise<void>;
-    /**
-     * @description handle with try catch
-     * @returns axios response
-     */
+    signin: <Credentials>(p: SignupProps<Credentials>) => void;
+    signout: (p?: SignoutProps) => void;
     signup: <Credentials_1>(p: SignupProps<Credentials_1>) => Promise<AxiosResponse<any, any> | undefined>;
-    submissionState: boolean;
+    verifyemail: (p: VerifyEmailPropsSignatureOne | VerifyEmailPropsSignatureSecond) => void;
     setSubmissionState: React.Dispatch<React.SetStateAction<boolean>>;
+    submissionState: boolean;
     error: AxiosError<unknown, any> | undefined;
 };
-interface BaseProps<Credentials> {
+interface BaseProps<Credentials = {}> {
     setError?: Dispatch<SetStateAction<AxiosError | undefined>>;
     setSubmissionState?: Dispatch<SetStateAction<boolean>>;
     credentials: Credentials;
-    url: string;
-}
-interface SigninProps<Credentials> extends Partial<Pick<ContextData, "fetchUser" | "baseUrl">>, BaseProps<Credentials> {
+    url?: string;
 }
 interface SignupProps<Credentials> extends Partial<Pick<ContextData, "baseUrl">>, BaseProps<Credentials> {
 }
-interface SignoutProps extends Partial<Pick<ContextData, "setUser" | "baseUrl">> {
-    url: string;
-    setSubmissionState?: Dispatch<SetStateAction<boolean>>;
-    setError?: Dispatch<SetStateAction<AxiosError | undefined>>;
+interface SignoutProps extends Partial<Pick<ContextData, "setUser" | "baseUrl">>, Pick<BaseProps, "setError" | "setSubmissionState" | "url"> {
+}
+interface VerifyEmailPropsSignatureOne extends Partial<Pick<ContextData, "fetchUser" | "baseUrl">>, BaseProps<{
+    code: string;
+}> {
+    authenticate: boolean;
+    method: "PUT";
+}
+interface VerifyEmailPropsSignatureSecond extends Partial<Pick<ContextData, "fetchUser" | "baseUrl">>, BaseProps<{
+    code: string;
+    successRedirect: string;
+}> {
+    authenticate?: never;
+    method: "GET";
 }
 export {};

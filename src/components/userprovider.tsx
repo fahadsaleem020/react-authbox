@@ -61,10 +61,11 @@ export const UserProvider: FC<UserProviderProps> = ({
   refetchOnServerError = false,
 }) => {
   const [user, setUser] = useState<ContextData["user"]>();
-  let url = baseUrl?.trim() + "/" + fetchUserFrom.trim();
+  let url = baseUrl?.trim() + fetchUserFrom.trim();
   const [isloading, setIsloading] = useState(true);
 
   const fetchUser = async () => {
+    console.log(url);
     try {
       const { status, data } = await axios(url, {
         withCredentials: true,
@@ -107,31 +108,51 @@ export const UserProvider: FC<UserProviderProps> = ({
 
 export const useAuthentication = () => {
   const [submissionState, setSubmissionState] = useState(false);
-  const [error, setError] = useState<AxiosError>();
   const { setUser, fetchUser, baseUrl } = useUser();
+  const [error, setError] = useState<AxiosError>();
 
   return {
-    signin: <Credentials,>(p: SigninProps<Credentials>) =>
-      signin({ ...p, setSubmissionState, fetchUser, setError, baseUrl }),
-    signout: (p: SignoutProps) =>
-      signout({ ...p, setSubmissionState, setUser, setError, baseUrl }),
-    /**
-     * @description handle with try catch
-     * @returns axios response
-     */
+    signin: <Credentials,>(p: SignupProps<Credentials>) =>
+      signin({
+        setSubmissionState,
+        url: "/signin",
+        fetchUser,
+        setError,
+        baseUrl,
+        ...p,
+      }),
+    signout: (p?: SignoutProps) =>
+      signout({
+        setSubmissionState,
+        url: "/signout",
+        setError,
+        setUser,
+        baseUrl,
+        ...p,
+      }),
     signup: <Credentials,>(p: SignupProps<Credentials>) =>
-      signup({ ...p, setSubmissionState, setError, baseUrl }),
-    submissionState,
+      signup({ setSubmissionState, setError, baseUrl, url: "/signup", ...p }),
+    verifyemail: (
+      p: VerifyEmailPropsSignatureOne | VerifyEmailPropsSignatureSecond
+    ) =>
+      verifyemail({
+        setSubmissionState,
+        url: "/verify",
+        setError,
+        baseUrl,
+        ...p,
+      }),
     setSubmissionState,
+    submissionState,
     error,
   };
 };
 
-interface BaseProps<Credentials> {
+interface BaseProps<Credentials = {}> {
   setError?: Dispatch<SetStateAction<AxiosError | undefined>>;
   setSubmissionState?: Dispatch<SetStateAction<boolean>>;
   credentials: Credentials;
-  url: string;
+  url?: string;
 }
 
 interface SigninProps<Credentials>
@@ -150,7 +171,7 @@ const signin: SigninFn = async ({
 }) => {
   try {
     setSubmissionState?.(true);
-    const { status } = await axios(baseUrl + url, {
+    const { status } = await axios(baseUrl! + url, {
       withCredentials: true,
       data: credentials,
       method: "POST",
@@ -158,6 +179,7 @@ const signin: SigninFn = async ({
 
     if (status === 200) {
       setSubmissionState?.(false);
+      setError?.(undefined);
       await fetchUser?.();
     }
   } catch (error) {
@@ -183,13 +205,14 @@ const signup: SignupFn = async ({
 }) => {
   try {
     setSubmissionState?.(true);
-    const res = await axios(baseUrl + url, {
+    const res = await axios(baseUrl! + url, {
       withCredentials: true,
       data: credentials,
       method: "POST",
     });
     if (res.status === 200) {
       setSubmissionState?.(false);
+      setError?.(undefined);
       return res;
     }
   } catch (error) {
@@ -199,28 +222,80 @@ const signup: SignupFn = async ({
 };
 
 interface SignoutProps
-  extends Partial<Pick<ContextData, "setUser" | "baseUrl">> {
-  url: string;
-  setSubmissionState?: Dispatch<SetStateAction<boolean>>;
-  setError?: Dispatch<SetStateAction<AxiosError | undefined>>;
-}
+  extends Partial<Pick<ContextData, "setUser" | "baseUrl">>,
+    Pick<BaseProps, "setError" | "setSubmissionState" | "url"> {}
 
-const signout = async ({
+type SignoutFn = (props: SignoutProps) => void;
+
+const signout: SignoutFn = async ({
   setSubmissionState,
   setError,
-  setUser,
   baseUrl,
+  setUser,
   url,
-}: SignoutProps) => {
+}) => {
   try {
     setSubmissionState?.(true);
-    const { status } = await axios(baseUrl + url, {
+    const { status } = await axios(baseUrl! + url, {
       method: "DELETE",
       withCredentials: true,
     });
     if (status === 200) {
       setSubmissionState?.(false);
+      setError?.(undefined);
       setUser?.(undefined);
+    }
+  } catch (error) {
+    setSubmissionState?.(false);
+    setError?.(error as AxiosError);
+  }
+};
+
+interface VerifyEmailPropsSignatureOne
+  extends Partial<Pick<ContextData, "fetchUser" | "baseUrl">>,
+    BaseProps<{ code: string }> {
+  authenticate: boolean;
+  method: "PUT";
+}
+
+interface VerifyEmailPropsSignatureSecond
+  extends Partial<Pick<ContextData, "fetchUser" | "baseUrl">>,
+    BaseProps<{ code: string; successRedirect: string }> {
+  authenticate?: never;
+  method: "GET";
+}
+
+type VerifyEmailFn = (
+  props: VerifyEmailPropsSignatureOne | VerifyEmailPropsSignatureSecond
+) => void;
+
+const verifyemail: VerifyEmailFn = async ({
+  setSubmissionState,
+  authenticate,
+  credentials,
+  fetchUser,
+  setError,
+  baseUrl,
+  method,
+  url,
+}) => {
+  const urlWithParam =
+    method === "PUT" ? baseUrl! + url : baseUrl! + url + "/:code";
+
+  try {
+    setSubmissionState?.(true);
+    const { status } = await axios(urlWithParam, {
+      withCredentials: true,
+      data: credentials,
+      method: method,
+    });
+
+    if (status === 200) {
+      setSubmissionState?.(false);
+      setError?.(undefined);
+      if (authenticate) {
+        await fetchUser?.();
+      }
     }
   } catch (error) {
     setSubmissionState?.(false);

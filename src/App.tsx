@@ -9,9 +9,7 @@ function App() {
     const credentials = Object.fromEntries(new FormData(e.currentTarget));
 
     await signin({
-      credentials: credentials,
-      url: "/signin",
-      baseUrl: "bogaboga",
+      credentials,
     });
   };
 
@@ -28,7 +26,7 @@ function App() {
       </Offline>
       <Online>
         online
-        <button type="button" onClick={() => signout({ url: "/logout" })}>
+        <button type="button" onClick={() => signout()}>
           logout
         </button>
       </Online>
