@@ -5,7 +5,13 @@ import App from "./App";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <UserProvider fetchUserFrom="/user" baseUrl="http://localhost:3000/api">
+    <UserProvider
+      fetchUserFrom="/user"
+      baseUrl={{
+        development: "http://localhost:3000/",
+        production: "http://localhost:3000/",
+      }}
+    >
       <App />
     </UserProvider>
   </React.StrictMode>

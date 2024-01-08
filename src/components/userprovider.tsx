@@ -21,7 +21,7 @@ interface ContextData {
 interface UserProviderProps extends PropsWithChildren {
   /**
    * @type string
-   * @description url to fetch the user information from
+   * @description url to fetch the user information from.
    */
   fetchUserFrom: string;
   /**
@@ -34,23 +34,17 @@ interface UserProviderProps extends PropsWithChildren {
    * @type function
    * @param error AxioxError
    * @returns void
-   * @description contains error info if the fetchUserFrom fails to get user info
+   * @description contains error info if the fetchUserFrom fails to get user info.
    */
   onError?: (error: AxiosError) => void;
   /**
-   * @type string
-   * @description set the base url to be used in sign, signout and log functions.
+   * @type object
+   * @description set the base url to be used with authentication funciton.
    */
-  baseUrl: string;
+  baseUrl: { production: string; development: string };
 }
 
-const UserContext = createContext<ContextData>({
-  fetchUser: () => Promise.resolve(),
-  setUser: () => null,
-  user: undefined,
-  isloading: true,
-  baseUrl: "",
-});
+const UserContext = createContext<ContextData>({} as any);
 
 export const useUser = () => useContext(UserContext);
 export const UserProvider: FC<UserProviderProps> = ({
@@ -61,12 +55,18 @@ export const UserProvider: FC<UserProviderProps> = ({
   refetchOnServerError = false,
 }) => {
   const [user, setUser] = useState<ContextData["user"]>();
-  let url = baseUrl?.trim() + fetchUserFrom.trim();
   const [isloading, setIsloading] = useState(true);
+
+  const enviroment = process.env.NODE_ENV as "production" | "development";
+
+  const sanitizeDomain = (domain: string) =>
+    domain.at(-1) === "/" ? domain.slice(0, -1) + "/api" : domain + "/api";
+
+  const url = sanitizeDomain(baseUrl[enviroment]);
 
   const fetchUser = async () => {
     try {
-      const { status, data } = await axios(url, {
+      const { status, data } = await axios(url + fetchUserFrom, {
         withCredentials: true,
       });
 
@@ -97,7 +97,7 @@ export const UserProvider: FC<UserProviderProps> = ({
         setUser,
         isloading,
         fetchUser,
-        baseUrl: baseUrl?.trim(),
+        baseUrl: url,
       }}
     >
       {children}
@@ -131,9 +131,7 @@ export const useAuthentication = () => {
       }),
     signup: <Credentials,>(p: SignupProps<Credentials>) =>
       signup({ setSubmissionState, setError, baseUrl, url: "/signup", ...p }),
-    verifyemail: (
-      p: VerifyEmailPropsSignatureOne | VerifyEmailPropsSignatureSecond
-    ) =>
+    verifyemail: (p: VerifyEmailProps) =>
       verifyemail({
         setSubmissionState,
         url: "/verify",
@@ -251,23 +249,14 @@ const signout: SignoutFn = async ({
   }
 };
 
-interface VerifyEmailPropsSignatureOne
+interface VerifyEmailProps
   extends Partial<Pick<ContextData, "fetchUser" | "baseUrl">>,
     BaseProps<{ code: string }> {
   authenticate: boolean;
-  method: "PUT";
+  method: "PUT" | "GET";
 }
 
-interface VerifyEmailPropsSignatureSecond
-  extends Partial<Pick<ContextData, "fetchUser" | "baseUrl">>,
-    BaseProps<{ code: string }> {
-  authenticate?: never;
-  method: "GET";
-}
-
-type VerifyEmailFn = (
-  props: VerifyEmailPropsSignatureOne | VerifyEmailPropsSignatureSecond
-) => void;
+type VerifyEmailFn = (props: VerifyEmailProps) => void;
 
 const verifyemail: VerifyEmailFn = async ({
   setSubmissionState,
@@ -284,7 +273,7 @@ const verifyemail: VerifyEmailFn = async ({
   if (method === "PUT") {
     urlWithParam = baseUrl! + url;
   } else {
-    urlWithParam = baseUrl! + url + `/${credentials.code}`;
+    urlWithParam = baseUrl! + url + `/${credentials.code}/${authenticate}`;
   }
 
   try {
