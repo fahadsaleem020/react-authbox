@@ -137,6 +137,7 @@ export const useAuthentication = () => {
       verifyemail({
         setSubmissionState,
         url: "/verify",
+        fetchUser,
         setError,
         baseUrl,
         ...p,
