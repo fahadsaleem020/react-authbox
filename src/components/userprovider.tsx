@@ -21,7 +21,7 @@ interface ContextData {
 interface UserProviderProps extends PropsWithChildren {
   /**
    * @type string
-   * @description url to fetch the user information from.
+   * @description url to fetch the user information from on browser reoload.
    */
   fetchUserFrom: string;
   /**
@@ -34,12 +34,12 @@ interface UserProviderProps extends PropsWithChildren {
    * @type function
    * @param error AxioxError
    * @returns void
-   * @description contains error info if the fetchUserFrom fails to get user info.
+   * @description contains errors stored by any of the authentication functions. This could be used to catch errors globally.
    */
   onError?: (error: AxiosError) => void;
   /**
    * @type object
-   * @description set the base url to be used with authentication funciton.
+   * @description set the base url to be used with authentication functions everywhere.
    */
   baseUrl: { production: string; development: string };
 }
@@ -57,11 +57,10 @@ export const UserProvider: FC<UserProviderProps> = ({
   const [user, setUser] = useState<ContextData["user"]>();
   const [isloading, setIsloading] = useState(true);
 
-  const enviroment = process.env.NODE_ENV as "production" | "development";
-
   const sanitizeDomain = (domain: string) =>
     domain.at(-1) === "/" ? domain.slice(0, -1) + "/api" : domain + "/api";
 
+  const enviroment = process.env.NODE_ENV as "production" | "development";
   const url = sanitizeDomain(baseUrl[enviroment]);
 
   const fetchUser = async () => {
@@ -120,6 +119,7 @@ export const useAuthentication = () => {
         baseUrl,
         ...p,
       }),
+
     signout: (p?: SignoutProps) =>
       signout({
         setSubmissionState,
@@ -129,8 +129,33 @@ export const useAuthentication = () => {
         baseUrl,
         ...p,
       }),
+
     signup: <Credentials,>(p: SignupProps<Credentials>) =>
       signup({ setSubmissionState, setError, baseUrl, url: "/signup", ...p }),
+
+    requestpasswordreset: (p: RequestPasswordResetProps) =>
+      requestpasswordreset({
+        url: "/requestpasswordreset",
+        setSubmissionState,
+        setError,
+        baseUrl,
+        ...p,
+      }),
+
+    resetpassword: (p: ResetPasswordProps) =>
+      resetpassword({
+        url: "/resetpassword",
+        setSubmissionState,
+        fetchUser,
+        setError,
+        baseUrl,
+        ...p,
+      }),
+
+    /**
+     * this creates a new user.This function is to be used after the signup.
+     */
+
     verifyemail: (p: VerifyEmailProps) =>
       verifyemail({
         setSubmissionState,
@@ -140,6 +165,7 @@ export const useAuthentication = () => {
         baseUrl,
         ...p,
       }),
+
     setSubmissionState,
     submissionState,
     error,
@@ -292,6 +318,83 @@ const verifyemail: VerifyEmailFn = async ({
 
       if (authenticate) await fetchUser?.();
 
+      return res.data;
+    }
+  } catch (error) {
+    setSubmissionState?.(false);
+    setError?.(error as AxiosError);
+  }
+};
+
+interface RequestPasswordResetProps
+  extends Partial<Pick<ContextData, "baseUrl">>,
+    BaseProps<{ email: string }> {}
+
+type RequestPasswordResetFn = (
+  props: RequestPasswordResetProps
+) => Promise<AxiosResponse<any, any> | undefined>;
+
+const requestpasswordreset: RequestPasswordResetFn = async ({
+  setSubmissionState,
+  credentials,
+  setError,
+  baseUrl,
+  url,
+}) => {
+  try {
+    setSubmissionState?.(true);
+    const res = await axios(baseUrl! + url, {
+      withCredentials: true,
+      data: credentials,
+      method: "POST",
+    });
+    if (res.status === 200) {
+      setSubmissionState?.(false);
+      setError?.(undefined);
+      return res;
+    }
+  } catch (error) {
+    setSubmissionState?.(false);
+    setError?.(error as AxiosError);
+  }
+};
+
+interface ResetPasswordProps
+  extends Partial<Pick<ContextData, "fetchUser" | "baseUrl">>,
+    BaseProps<{
+      confirmPassword: string;
+      password: string;
+      code: string;
+    }> {
+  authenticate: boolean;
+}
+
+type ResetPasswordFn = (
+  props: ResetPasswordProps
+) => Promise<AxiosResponse<any, any>["data"] | undefined>;
+
+const resetpassword: ResetPasswordFn = async ({
+  setSubmissionState,
+  authenticate,
+  credentials,
+  fetchUser,
+  setError,
+  baseUrl,
+  url,
+}) => {
+  try {
+    setSubmissionState?.(true);
+    const res = await axios(baseUrl! + url, {
+      data: { ...credentials, authenticate },
+      withCredentials: true,
+      method: "POST",
+    });
+
+    if (res.status === 200) {
+      setSubmissionState?.(false);
+      setError?.(undefined);
+
+      if (authenticate) await fetchUser?.();
       return res.data;
     }
   } catch (error) {
