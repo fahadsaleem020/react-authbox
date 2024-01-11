@@ -301,7 +301,7 @@ const verifyemail: VerifyEmailFn = async ({
   if (method === "PUT") {
     urlWithParam = baseUrl! + url;
   } else {
-    urlWithParam = baseUrl! + url + `/${credentials.code}/${authenticate}`;
+    urlWithParam = baseUrl! + url + `/${credentials.code}`;
   }
 
   try {
