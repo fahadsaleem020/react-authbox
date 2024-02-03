@@ -10,12 +10,12 @@ import React, {
   FC,
 } from "react";
 
-interface ContextData {
-  user: unknown;
+interface ContextData<T = unknown> {
+  user: T;
   baseUrl: string;
   isloading: boolean;
   fetchUser: () => Promise<void>;
-  setUser: React.Dispatch<React.SetStateAction<unknown>>;
+  setUser: React.Dispatch<React.SetStateAction<T>>;
 }
 
 interface UserProviderProps extends PropsWithChildren {
@@ -46,7 +46,8 @@ interface UserProviderProps extends PropsWithChildren {
 
 const UserContext = createContext<ContextData>({} as any);
 
-export const useUser = () => useContext(UserContext);
+export const useUser = <T,>() => useContext(UserContext) as ContextData<T>;
+
 export const UserProvider: FC<UserProviderProps> = ({
   baseUrl,
   onError,
