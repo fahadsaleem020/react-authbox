@@ -21,7 +21,11 @@ interface ContextData<T = unknown> {
 interface UserProviderProps extends PropsWithChildren {
   /**
    * @type string
-   * @description url to fetch the user information from on browser reoload.
+   * @description Url to fetch the user information from on browser reoload.
+   * @example
+   * ```ts
+   * fetchUserFrom="/user"
+   * ```
    */
   fetchUserFrom: string;
   /**
@@ -39,7 +43,14 @@ interface UserProviderProps extends PropsWithChildren {
   onError?: (error: AxiosError) => void;
   /**
    * @type object
-   * @description set the base url to be used with authentication functions everywhere.
+   * @description Set the base url of backend to be used with authentication functions everywhere.
+   * @example
+   * ```ts
+   *   baseUrl={{
+        development: "http://localhost:3000/",
+        production: "http://localhost:3000/",
+      }}
+   * ```
    */
   baseUrl: { production: string; development: string };
 }
@@ -105,10 +116,12 @@ export const UserProvider: FC<UserProviderProps> = ({
   );
 };
 
+type AxiosErrorWithMessage = AxiosError<{ message: string }>;
+
 export const useAuthentication = () => {
   const [submissionState, setSubmissionState] = useState(false);
   const { setUser, fetchUser, baseUrl } = useUser();
-  const [error, setError] = useState<AxiosError>();
+  const [error, setError] = useState<AxiosErrorWithMessage>();
 
   return {
     signin: <Credentials,>(p: SignupProps<Credentials>) =>
@@ -121,8 +134,8 @@ export const useAuthentication = () => {
         ...p,
       }),
 
-    signout: (p?: SignoutProps) =>
-      signout({
+    signout: <Response,>(p?: SignoutProps) =>
+      signout<Response>({
         setSubmissionState,
         url: "/signout",
         setError,
@@ -131,11 +144,17 @@ export const useAuthentication = () => {
         ...p,
       }),
 
-    signup: <Credentials,>(p: SignupProps<Credentials>) =>
-      signup({ setSubmissionState, setError, baseUrl, url: "/signup", ...p }),
+    signup: <Response = {}, Credentials = {}>(p: SignupProps<Credentials>) =>
+      signup<Response, Credentials>({
+        setSubmissionState,
+        setError,
+        baseUrl,
+        url: "/signup",
+        ...p,
+      }),
 
-    requestpasswordreset: (p: RequestPasswordResetProps) =>
-      requestpasswordreset({
+    requestpasswordreset: <Response,>(p: RequestPasswordResetProps) =>
+      requestpasswordreset<Response>({
         url: "/requestpasswordreset",
         setSubmissionState,
         setError,
@@ -143,8 +162,8 @@ export const useAuthentication = () => {
         ...p,
       }),
 
-    resetpassword: (p: ResetPasswordProps) =>
-      resetpassword({
+    resetpassword: <Response,>(p: ResetPasswordProps) =>
+      resetpassword<Response>({
         url: "/resetpassword",
         setSubmissionState,
         fetchUser,
@@ -154,11 +173,12 @@ export const useAuthentication = () => {
       }),
 
     /**
-     * this creates a new user.This function is to be used after the signup.
+     * @description
+     * This creates a new user.This function is to be used after the signup.
      */
 
-    verifyemail: (p: VerifyEmailProps) =>
-      verifyemail({
+    verifyemail: <Response,>(p: VerifyEmailPropsGet | VerifyEmailPropsPost) =>
+      verifyemail<Response>({
         setSubmissionState,
         url: "/verify",
         fetchUser,
@@ -174,7 +194,7 @@ export const useAuthentication = () => {
 };
 
 interface BaseProps<Credentials = {}> {
-  setError?: Dispatch<SetStateAction<AxiosError | undefined>>;
+  setError?: Dispatch<SetStateAction<AxiosErrorWithMessage | undefined>>;
   setSubmissionState?: Dispatch<SetStateAction<boolean>>;
   credentials: Credentials;
   url?: string;
@@ -209,7 +229,7 @@ const signin: SigninFn = async ({
     }
   } catch (error) {
     setSubmissionState?.(false);
-    setError?.(error as AxiosError);
+    setError?.(error as AxiosErrorWithMessage);
   }
 };
 
@@ -217,9 +237,9 @@ interface SignupProps<Credentials>
   extends Partial<Pick<ContextData, "baseUrl">>,
     BaseProps<Credentials> {}
 
-type SignupFn = <Credentials>(
+type SignupFn = <Response, Credentials>(
   props: SignupProps<Credentials>
-) => Promise<AxiosResponse<any, any> | undefined>;
+) => Promise<AxiosResponse<Response> | undefined>;
 
 const signup: SignupFn = async ({
   setSubmissionState,
@@ -242,7 +262,7 @@ const signup: SignupFn = async ({
     }
   } catch (error) {
     setSubmissionState?.(false);
-    setError?.(error as AxiosError);
+    setError?.(error as AxiosErrorWithMessage);
   }
 };
 
@@ -250,7 +270,9 @@ interface SignoutProps
   extends Partial<Pick<ContextData, "setUser" | "baseUrl">>,
     Pick<BaseProps, "setError" | "setSubmissionState" | "url"> {}
 
-type SignoutFn = (props: SignoutProps) => void;
+type SignoutFn = <Response>(
+  props: SignoutProps
+) => Promise<AxiosResponse<Response> | undefined>;
 
 const signout: SignoutFn = async ({
   setSubmissionState,
@@ -261,31 +283,39 @@ const signout: SignoutFn = async ({
 }) => {
   try {
     setSubmissionState?.(true);
-    const { status } = await axios(baseUrl! + url, {
+    const res = await axios(baseUrl! + url, {
       method: "DELETE",
       withCredentials: true,
     });
-    if (status === 200) {
+    if (res.status === 200) {
       setSubmissionState?.(false);
       setError?.(undefined);
       setUser?.(undefined);
+      return res;
     }
   } catch (error) {
+    setUser?.(undefined);
     setSubmissionState?.(false);
-    setError?.(error as AxiosError);
+    setError?.(error as AxiosErrorWithMessage);
   }
 };
 
-interface VerifyEmailProps
-  extends Partial<Pick<ContextData, "fetchUser" | "baseUrl">>,
-    BaseProps<{ code: string }> {
-  authenticate: boolean;
-  method: "PUT" | "GET";
+type VerifyEmailBaseProps = BaseProps<{ code: string }> &
+  Partial<Pick<ContextData, "fetchUser" | "baseUrl">>;
+
+interface VerifyEmailPropsGet extends VerifyEmailBaseProps {
+  authenticate?: never;
+  method: "GET";
 }
 
-type VerifyEmailFn = (
-  props: VerifyEmailProps
-) => Promise<AxiosResponse<any, any>["data"] | undefined>;
+interface VerifyEmailPropsPost extends VerifyEmailBaseProps {
+  authenticate: true;
+  method: "PUT";
+}
+
+type VerifyEmailFn = <Response>(
+  props: VerifyEmailPropsGet | VerifyEmailPropsPost
+) => Promise<AxiosResponse<Response> | undefined>;
 
 const verifyemail: VerifyEmailFn = async ({
   setSubmissionState,
@@ -319,11 +349,11 @@ const verifyemail: VerifyEmailFn = async ({
 
       if (authenticate) await fetchUser?.();
 
-      return res.data;
+      return res;
     }
   } catch (error) {
     setSubmissionState?.(false);
-    setError?.(error as AxiosError);
+    setError?.(error as AxiosErrorWithMessage);
   }
 };
 
@@ -331,9 +361,9 @@ interface RequestPasswordResetProps
   extends Partial<Pick<ContextData, "baseUrl">>,
     BaseProps<{ email: string }> {}
 
-type RequestPasswordResetFn = (
+type RequestPasswordResetFn = <Response>(
   props: RequestPasswordResetProps
-) => Promise<AxiosResponse<any, any> | undefined>;
+) => Promise<AxiosResponse<Response> | undefined>;
 
 const requestpasswordreset: RequestPasswordResetFn = async ({
   setSubmissionState,
@@ -356,7 +386,7 @@ const requestpasswordreset: RequestPasswordResetFn = async ({
     }
   } catch (error) {
     setSubmissionState?.(false);
-    setError?.(error as AxiosError);
+    setError?.(error as AxiosErrorWithMessage);
   }
 };
 
@@ -370,9 +400,9 @@ interface ResetPasswordProps
   authenticate: boolean;
 }
 
-type ResetPasswordFn = (
+type ResetPasswordFn = <Response>(
   props: ResetPasswordProps
-) => Promise<AxiosResponse<any, any>["data"] | undefined>;
+) => Promise<AxiosResponse<Response> | undefined>;
 
 const resetpassword: ResetPasswordFn = async ({
   setSubmissionState,
@@ -396,10 +426,10 @@ const resetpassword: ResetPasswordFn = async ({
       setError?.(undefined);
 
       if (authenticate) await fetchUser?.();
-      return res.data;
+      return res;
     }
   } catch (error) {
     setSubmissionState?.(false);
-    setError?.(error as AxiosError);
+    setError?.(error as AxiosErrorWithMessage);
   }
 };
