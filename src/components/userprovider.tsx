@@ -124,8 +124,8 @@ export const useAuthentication = () => {
   const [error, setError] = useState<AxiosErrorWithMessage>();
 
   return {
-    signin: <Credentials,>(p: SignupProps<Credentials>) =>
-      signin({
+    signin: <Response = {}, Credentials = {}>(p: SignupProps<Credentials>) =>
+      signin<Response, Credentials>({
         setSubmissionState,
         url: "/signin",
         fetchUser,
@@ -204,7 +204,9 @@ interface SigninProps<Credentials>
   extends Partial<Pick<ContextData, "fetchUser" | "baseUrl">>,
     BaseProps<Credentials> {}
 
-type SigninFn = <Credentials>(props: SigninProps<Credentials>) => void;
+type SigninFn = <Response, Credentials>(
+  props: SigninProps<Credentials>
+) => Promise<AxiosResponse<Response> | undefined>;
 
 const signin: SigninFn = async ({
   setSubmissionState,
@@ -216,16 +218,17 @@ const signin: SigninFn = async ({
 }) => {
   try {
     setSubmissionState?.(true);
-    const { status } = await axios(baseUrl! + url, {
+    const res = await axios(baseUrl! + url, {
       withCredentials: true,
       data: credentials,
       method: "POST",
     });
 
-    if (status === 200) {
+    if (res.status === 200) {
       setSubmissionState?.(false);
       setError?.(undefined);
       await fetchUser?.();
+      return res;
     }
   } catch (error) {
     setSubmissionState?.(false);

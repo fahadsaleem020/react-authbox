@@ -28,12 +28,10 @@ function App() {
       confirmPassword: string;
     };
 
-    const res = await resetpassword({
+    await resetpassword({
       authenticate: true,
       credentials,
     });
-
-    console.log(res);
   };
 
   return (
