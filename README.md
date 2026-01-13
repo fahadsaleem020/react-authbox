@@ -127,6 +127,41 @@ const Dashboard = () => {
 };
 ```
 
+### 4. Accessing User Data
+
+You can access the current user object and other context properties directly using the `useUser` hook.
+
+```tsx
+import { useUser } from 'react-authbox';
+
+interface UserProfile {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+}
+
+const UserProfileCard = () => {
+  // Pass your user type to useUser generic for type safety
+  const { user, isloading, fetchUser } = useUser<UserProfile>();
+
+  if (isloading) return <div>Loading...</div>;
+  if (!user) return <div>No user logged in</div>;
+
+  return (
+    <div className="card">
+      <h2>{user.name}</h2>
+      <p>{user.email}</p>
+      <span className="badge">{user.role}</span>
+      
+      <button onClick={fetchUser}>
+        Refresh Profile
+      </button>
+    </div>
+  );
+};
+```
+
 ## API Reference
 
 ### `UserProvider Props`
@@ -159,7 +194,3 @@ const Dashboard = () => {
 | `fallback` | `ReactNode` | Content to show while loading/checking auth state. |
 | `offline` (on `<Online>`) | `ReactNode` | Optional content to show if the user is offline (alternative to using `<Offline>`). |
 | `online` (on `<Offline>`) | `ReactNode` | Optional content to show if the user is online. |
-
-## License
-
-MIT © [fahadsaleem020](https://github.com/fahadsaleem020)
