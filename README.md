@@ -127,10 +127,10 @@ const Dashboard = () => {
 };
 ```
 
-### 4. Accessing User Data
-
-You can access the current user object and other context properties directly using the `useUser` hook.
-
+ ### 4. Accessing User Data
+ 
+ You can access the current user object and other context properties directly using the `useUser` hook.
+ 
 ```tsx
 import { useUser } from 'react-authbox';
 
@@ -159,11 +159,53 @@ const UserProfileCard = () => {
       </button>
     </div>
   );
-};
+ };
+ ```
+ 
+## Backend Requirements
+
+- Endpoints must exist on your backend; this library only calls them and uses cookies for session via `withCredentials`.
+- The provider appends `/api` to your base URL. Place routes under `/api`.
+- Required routes (see [userprovider.tsx](file:///d:/react-authbox/src/components/userprovider.tsx)):
+  - `GET /api{fetchUserFrom}`: returns current authenticated user.
+  - `POST /api/signin`: signs in and sets a session cookie.
+  - `DELETE /api/signout`: signs out and clears session.
+  - `POST /api/signup`: registers a user.
+  - `GET /api/verify/:code` and `PUT /api/verify`: email verification.
+  - `POST /api/requestpasswordreset`: initiates password reset.
+  - `POST /api/resetpassword`: completes password reset; may authenticate.
+
+### Express.js Route Sketch (very short)
+
+```ts
+import express from "express";
+
+const app = express();
+app.use(express.json());
+
+app.get("/api/users/me", (req, res) => {
+  res.status(200).json({ id: "1", name: "Jane", email: "jane@acme.com", role: "user" });
+});
+
+app.post("/api/signin", (req, res) => {
+  res.cookie("sid", "session-token", { httpOnly: true, sameSite: "lax" });
+  res.status(200).json({ ok: true });
+});
+
+app.delete("/api/signout", (req, res) => {
+  res.clearCookie("sid");
+  res.status(200).json({ ok: true });
+});
+
+app.post("/api/signup", (req, res) => res.status(200).json({ ok: true }));
+app.get("/api/verify/:code", (req, res) => res.status(200).json({ ok: true }));
+app.put("/api/verify", (req, res) => res.status(200).json({ ok: true }));
+app.post("/api/requestpasswordreset", (req, res) => res.status(200).json({ ok: true }));
+app.post("/api/resetpassword", (req, res) => res.status(200).json({ ok: true }));
 ```
 
-## API Reference
-
+ ## API Reference
+ 
 ### `UserProvider Props`
 
 | Prop | Type | Description |
@@ -194,3 +236,4 @@ const UserProfileCard = () => {
 | `fallback` | `ReactNode` | Content to show while loading/checking auth state. |
 | `offline` (on `<Online>`) | `ReactNode` | Optional content to show if the user is offline (alternative to using `<Offline>`). |
 | `online` (on `<Offline>`) | `ReactNode` | Optional content to show if the user is online. |
+
